@@ -1,28 +1,50 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { LogIn } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-
+import { useAuth } from "../hooks/useAuth";
+import { api } from "../services/api";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Login(): JSX.Element {
   const navigate = useNavigate();
+  const { login, user } = useAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      navigate("/home", { replace: true });
+    }
+  }, [user, navigate]);
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // TODO: replace with real auth call to backend
-    // Mock success -> redirect to home
-    // Save token to localStorage if remember is checked
-    if (email && password) {
-      if (remember) localStorage.setItem("mock_token", "logged_in");
-      else sessionStorage.setItem("mock_token", "logged_in");
-      // mock username for welcome
-      localStorage.setItem("mock_username", email.split("@")[0] || "User");
-      navigate("/"); // change to your home route
-    } else {
-      alert("Please enter email and password");
+    setError(null);
+    if (!email || !password) {
+      setError("Missing email or password");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await api.login(email, password);
+      if (!res.token || !res.user) {
+        throw new Error("Invalid response from server");
+      }
+      login(res.user, res.token);
+      if (remember) {
+        localStorage.setItem("remember_login", "true");
+      } else {
+        localStorage.removeItem("remember_login");
+      }
+      navigate("/home", { replace: true });
+    } catch (err: any) {
+      setError(err.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -44,13 +66,19 @@ export default function Login(): JSX.Element {
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl font-bold text-center mb-6">Sign In</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">{t('auth.loginTitle') || 'Sign In'}</h1>
+
+        {error && (
+          <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+            {error}
+          </div>
+        )}
 
         <form className="space-y-5" onSubmit={onSubmit}>
           {/* Email */}
           <div>
             <label htmlFor="email" className="text-gray-700 font-medium">
-              Email
+              {t('auth.email') || 'Email'}
             </label>
             <input
               id="email"
@@ -66,7 +94,7 @@ export default function Login(): JSX.Element {
           {/* Password */}
           <div>
             <label htmlFor="password" className="text-gray-700 font-medium">
-              Password
+              {t('auth.password') || 'Password'}
             </label>
             <input
               id="password"
@@ -88,7 +116,7 @@ export default function Login(): JSX.Element {
                 onChange={(e) => setRemember(e.target.checked)}
                 className="form-checkbox h-4 w-4 text-blue-600"
               />
-              <span className="ml-2 text-gray-700">Remember me</span>
+              <span className="ml-2 text-gray-700">{t('auth.remember') || 'Remember me'}</span>
             </label>
 
             <Link
@@ -104,13 +132,13 @@ export default function Login(): JSX.Element {
             type="submit"
             className="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
           >
-            Sign In
+            {loading ? '...' : (t('auth.loginButton') || 'Sign In')}
           </button>
         </form>
 
         {/* Sign up link */}
         <p className="text-center mt-4 text-gray-600">
-          Don't have an account?
+          {t('auth.noAccount') || "Don't have an account?"}
           <Link to="/signup" className="text-blue-600 font-medium ml-1">
             Create account
           </Link>

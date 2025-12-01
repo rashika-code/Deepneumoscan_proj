@@ -68,7 +68,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </select>
               </div>
               
-              <span className="text-gray-700 font-medium hidden sm:inline">{user?.name}</span>
+              <span className="text-gray-700 font-medium hidden sm:inline">{user?.username}</span>
               
               <button
                 onClick={handleLogout}

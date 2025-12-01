@@ -1,20 +1,13 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importDefault(require("mongoose"));
+const jsonDb_1 = require("../utils/jsonDb");
 const connectDB = async () => {
     try {
-        const uri = process.env.MONGO_URI;
-        if (!uri) {
-            throw new Error("MONGO_URI is missing in .env file!");
-        }
-        await mongoose_1.default.connect(uri);
-        console.log("✅ MongoDB connected");
+        (0, jsonDb_1.ensureDataDir)();
+        console.log("✅ Local JSON Database initialized");
     }
     catch (err) {
-        console.error("MongoDB connection error:", err);
+        console.error("Database initialization error:", err);
     }
 };
 exports.default = connectDB;

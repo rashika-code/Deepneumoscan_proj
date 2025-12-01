@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { MapPin, Phone, Navigation } from 'lucide-react';
-import { Navbar } from '../components/Navbar';
-import { useLanguage } from '../components/LanguageToggle';
+import { Link } from 'react-router-dom';
+import { MapPin, Phone, Navigation, ArrowLeft } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 import { Hospital } from '../types';
 
 export const HospitalTracker = () => {
@@ -91,10 +91,12 @@ export const HospitalTracker = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
       <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/4021775/pexels-photo-4021775.jpeg?auto=compress&cs=tinysrgb&w=1920')] bg-cover bg-center opacity-5"></div>
 
-      <Navbar />
-
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
+          <Link to="/home" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 transition-colors">
+            <ArrowLeft className="mr-2" size={20} />
+            Back to Home
+          </Link>
           <div className="flex items-center gap-4 mb-8">
             <div className="p-3 bg-gradient-to-r from-red-500 to-red-600 rounded-xl">
               <MapPin size={32} className="text-white" />

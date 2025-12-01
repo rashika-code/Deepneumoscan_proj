@@ -5,8 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const multer_1 = __importDefault(require("multer"));
-const XrayResult_1 = __importDefault(require("../models/XrayResult"));
 const auth_1 = require("../middleware/auth");
+const jsonDb_1 = require("../utils/jsonDb");
 const router = (0, express_1.Router)();
 // Configure multer
 const storage = multer_1.default.diskStorage({
@@ -40,7 +40,9 @@ router.post('/', upload.single('image'), async (req, res) => {
         if (!req.file)
             return res.status(400).json({ error: 'Image required' });
         const mock = mockPredict(parseInt(age), smoking === 'true');
-        const result = new XrayResult_1.default({
+        const results = (0, jsonDb_1.readData)('xray_results');
+        const newResult = {
+            id: (0, jsonDb_1.generateId)(),
             userId: req.user.id,
             imageUrl: `/uploads/${req.file.filename}`,
             age: parseInt(age),
@@ -50,9 +52,11 @@ router.post('/', upload.single('image'), async (req, res) => {
             prediction: mock.prediction,
             confidence: mock.confidence,
             modelUsed: mock.model,
-        });
-        await result.save();
-        res.json(result);
+            createdAt: new Date().toISOString()
+        };
+        results.push(newResult);
+        (0, jsonDb_1.writeData)('xray_results', results);
+        res.json(newResult);
     }
     catch (err) {
         res.status(500).json({ error: err.message || 'Upload failed' });
@@ -60,8 +64,11 @@ router.post('/', upload.single('image'), async (req, res) => {
 });
 router.get('/', async (req, res) => {
     try {
-        const results = await XrayResult_1.default.find({ userId: req.user.id }).sort({ createdAt: -1 });
-        res.json(results);
+        const results = (0, jsonDb_1.readData)('xray_results');
+        const userResults = results
+            .filter(r => r.userId === req.user.id)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        res.json(userResults);
     }
     catch (err) {
         res.status(500).json({ error: 'Fetch failed' });
@@ -69,12 +76,12 @@ router.get('/', async (req, res) => {
 });
 router.delete('/:id', async (req, res) => {
     try {
-        const result = await XrayResult_1.default.deleteOne({
-            _id: req.params.id,
-            userId: req.user.id,
-        });
-        if (result.deletedCount === 0)
+        const results = (0, jsonDb_1.readData)('xray_results');
+        const index = results.findIndex(r => r.id === req.params.id && r.userId === req.user.id);
+        if (index === -1)
             return res.status(404).json({ error: 'Not found' });
+        results.splice(index, 1);
+        (0, jsonDb_1.writeData)('xray_results', results);
         res.json({ success: true });
     }
     catch (err) {

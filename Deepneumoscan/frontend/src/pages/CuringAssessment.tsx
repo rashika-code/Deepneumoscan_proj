@@ -1,8 +1,8 @@
 import { useState, FormEvent } from 'react';
-import { Activity, CheckCircle } from 'lucide-react';
-import { Navbar } from '../components/Navbar';
+import { Link } from 'react-router-dom';
+import { Activity, CheckCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useLanguage } from '../components/LanguageToggle';
+import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 
 interface Question {
@@ -13,8 +13,9 @@ interface Question {
 }
 
 export const CuringAssessment = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { t, language } = useLanguage();
+  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: number }>({});
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -136,8 +137,27 @@ export const CuringAssessment = () => {
     setAnswers({ ...answers, [questionId]: score });
   };
 
+  const handleNext = () => {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    console.log('Curing Assessment Submit clicked. Answers:', answers, 'Questions length:', questions.length);
+    
+    if (Object.keys(answers).length < questions.length) {
+      alert('Please answer all questions before submitting.');
+      return;
+    }
+    
     setLoading(true);
 
     const totalScore = Object.values(answers).reduce((sum, score) => sum + score, 0);
@@ -153,14 +173,19 @@ export const CuringAssessment = () => {
         answer: q.options.find((opt) => opt.score === answers[q.id])?.text || '',
         score: answers[q.id] || 0,
       })),
+      score: totalScore,
+      riskLevel: recoveryStatus,
       recoveryStatus,
     };
 
     try {
-      await api.submitCuringAssessment(assessmentData, user!.token);
+      console.log('Submitting curing assessment:', assessmentData);
+      await api.submitCuringAssessment(assessmentData, token!);
+      console.log('Curing assessment submitted successfully');
       setResult(recoveryStatus);
     } catch (error) {
       console.error('Failed to submit curing assessment:', error);
+      alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -170,10 +195,12 @@ export const CuringAssessment = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
       <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/4021775/pexels-photo-4021775.jpeg?auto=compress&cs=tinysrgb&w=1920')] bg-cover bg-center opacity-5"></div>
 
-      <Navbar />
-
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
+          <Link to="/home" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 transition-colors">
+            <ArrowLeft className="mr-2" size={20} />
+            Back to Home
+          </Link>
           <div className="flex items-center gap-4 mb-8">
             <div className="p-3 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl">
               <Activity size={32} className="text-white" />
@@ -186,41 +213,64 @@ export const CuringAssessment = () => {
 
           {!result ? (
             <form onSubmit={handleSubmit} className="space-y-6">
-              {questions.map((question) => (
-                <div key={question.id} className="bg-orange-50 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    {question.id}. {language === 'en' ? question.question : question.questionKn}
-                  </h3>
-                  <div className="space-y-2">
-                    {question.options.map((option, idx) => (
-                      <label
-                        key={idx}
-                        className="flex items-center gap-3 p-3 bg-white rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
-                      >
-                        <input
-                          type="radio"
-                          name={`question-${question.id}`}
-                          value={option.score}
-                          onChange={() => handleAnswerChange(question.id, option.score)}
-                          className="w-4 h-4 text-orange-600"
-                          required
-                        />
-                        <span className="text-gray-700">
-                          {language === 'en' ? option.text : option.textKn}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
+              <div className="bg-orange-50 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  {questions[currentQuestion].id}. {language === 'en' ? questions[currentQuestion].question : questions[currentQuestion].questionKn}
+                </h3>
+                <div className="space-y-2">
+                  {questions[currentQuestion].options.map((option, idx) => (
+                    <label
+                      key={idx}
+                      className={`flex items-center gap-3 p-3 bg-white rounded-lg cursor-pointer hover:bg-orange-100 transition-colors ${
+                        answers[questions[currentQuestion].id] === option.score ? 'ring-2 ring-orange-500' : ''
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={`question-${questions[currentQuestion].id}`}
+                        value={option.score}
+                        checked={answers[questions[currentQuestion].id] === option.score}
+                        onChange={() => handleAnswerChange(questions[currentQuestion].id, option.score)}
+                        className="w-4 h-4 text-orange-600"
+                        required
+                      />
+                      <span className="text-gray-700">
+                        {language === 'en' ? option.text : option.textKn}
+                      </span>
+                    </label>
+                  ))}
                 </div>
-              ))}
+              </div>
 
-              <button
-                type="submit"
-                disabled={loading || Object.keys(answers).length < questions.length}
-                className="w-full py-4 px-6 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? t('common.loading') : t('curingAssessment.submit')}
-              </button>
+              <div className="flex justify-between mt-6">
+                <button
+                  type="button"
+                  onClick={handlePrevious}
+                  disabled={currentQuestion === 0}
+                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                
+                {currentQuestion < questions.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={answers[questions[currentQuestion].id] === undefined}
+                    className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={loading || answers[questions[currentQuestion].id] === undefined}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {loading ? t('common.loading') : t('common.submit')}
+                  </button>
+                )}
+              </div>
             </form>
           ) : (
             <div className="text-center space-y-6">

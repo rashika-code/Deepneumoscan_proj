@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom';
-import { ClipboardList, Scan, Activity, MapPin, History, ArrowRight } from 'lucide-react';
+import { ClipboardList, Scan, Activity, MapPin, History, ArrowRight, LogOut } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useLanguage } from '../components/LanguageToggle';
-import { Navbar } from '../components/Navbar';
+import { useLanguage } from '../context/LanguageContext';
 
 export const Home = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useLanguage();
 
   const features = [
@@ -50,9 +49,16 @@ export const Home = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
       <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/4021775/pexels-photo-4021775.jpeg?auto=compress&cs=tinysrgb&w=1920')] bg-cover bg-center opacity-5"></div>
 
-      <Navbar />
-
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="absolute top-4 right-4">
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors shadow-sm font-medium"
+          >
+            <LogOut size={20} />
+            Logout
+          </button>
+        </div>
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
             {t('home.welcome')}, {user?.username}!

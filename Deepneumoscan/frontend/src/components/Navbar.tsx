@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Home, ClipboardList, Scan, Activity, MapPin, History, LogOut } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useLanguage } from './LanguageToggle';
+import { useLanguage } from '../context/LanguageContext';
 import { LanguageToggle } from './LanguageToggle';
 
 export const Navbar = () => {

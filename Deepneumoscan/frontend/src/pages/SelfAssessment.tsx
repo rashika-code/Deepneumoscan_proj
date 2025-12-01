@@ -1,8 +1,8 @@
 import { useState, FormEvent } from 'react';
-import { ClipboardList, CheckCircle } from 'lucide-react';
-import { Navbar } from '../components/Navbar';
+import { Link } from 'react-router-dom';
+import { ClipboardList, CheckCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useLanguage } from '../components/LanguageToggle';
+import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 
 interface Question {
@@ -13,11 +13,12 @@ interface Question {
 }
 
 export const SelfAssessment = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { t, language } = useLanguage();
   const [answers, setAnswers] = useState<{ [key: number]: number }>({});
   const [result, setResult] = useState<{ score: number; riskLevel: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
 
   const questions: Question[] = [
     {
@@ -136,8 +137,27 @@ export const SelfAssessment = () => {
     setAnswers({ ...answers, [questionId]: score });
   };
 
+  const handleNext = () => {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    console.log('Submit clicked. Answers:', answers, 'Questions length:', questions.length);
+    
+    if (Object.keys(answers).length < questions.length) {
+      alert('Please answer all questions before submitting.');
+      return;
+    }
+    
     setLoading(true);
 
     const totalScore = Object.values(answers).reduce((sum, score) => sum + score, 0);
@@ -160,10 +180,13 @@ export const SelfAssessment = () => {
     };
 
     try {
-      await api.submitSelfAssessment(assessmentData, user!.token);
+      console.log('Submitting assessment:', assessmentData);
+      await api.submitSelfAssessment(assessmentData, token!);
+      console.log('Assessment submitted successfully');
       setResult({ score: totalScore, riskLevel });
     } catch (error) {
       console.error('Failed to submit assessment:', error);
+      alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -173,10 +196,12 @@ export const SelfAssessment = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
       <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/4021775/pexels-photo-4021775.jpeg?auto=compress&cs=tinysrgb&w=1920')] bg-cover bg-center opacity-5"></div>
 
-      <Navbar />
-
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
+          <Link to="/home" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 transition-colors">
+            <ArrowLeft className="mr-2" size={20} />
+            Back to Home
+          </Link>
           <div className="flex items-center gap-4 mb-8">
             <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl">
               <ClipboardList size={32} className="text-white" />
@@ -189,41 +214,62 @@ export const SelfAssessment = () => {
 
           {!result ? (
             <form onSubmit={handleSubmit} className="space-y-6">
-              {questions.map((question) => (
-                <div key={question.id} className="bg-blue-50 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    {question.id}. {language === 'en' ? question.question : question.questionKn}
-                  </h3>
-                  <div className="space-y-2">
-                    {question.options.map((option, idx) => (
-                      <label
-                        key={idx}
-                        className="flex items-center gap-3 p-3 bg-white rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
-                      >
-                        <input
-                          type="radio"
-                          name={`question-${question.id}`}
-                          value={option.score}
-                          onChange={() => handleAnswerChange(question.id, option.score)}
-                          className="w-4 h-4 text-blue-600"
-                          required
-                        />
-                        <span className="text-gray-700">
-                          {language === 'en' ? option.text : option.textKn}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
+              <div className="bg-blue-50 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  {questions[currentQuestion].id}. {language === 'en' ? questions[currentQuestion].question : questions[currentQuestion].questionKn}
+                </h3>
+                <div className="space-y-2">
+                  {questions[currentQuestion].options.map((option, idx) => (
+                    <label
+                      key={idx}
+                      className="flex items-center gap-3 p-3 bg-white rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+                    >
+                      <input
+                        type="radio"
+                        name={`question-${questions[currentQuestion].id}`}
+                        value={option.score}
+                        checked={answers[questions[currentQuestion].id] === option.score}
+                        onChange={() => handleAnswerChange(questions[currentQuestion].id, option.score)}
+                        className="w-4 h-4 text-blue-600"
+                        required
+                      />
+                      <span className="text-gray-700">
+                        {language === 'en' ? option.text : option.textKn}
+                      </span>
+                    </label>
+                  ))}
                 </div>
-              ))}
+              </div>
 
-              <button
-                type="submit"
-                disabled={loading || Object.keys(answers).length < questions.length}
-                className="w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? t('common.loading') : t('selfAssessment.submit')}
-              </button>
+              <div className="flex justify-between mt-6">
+                <button
+                  type="button"
+                  onClick={handlePrevious}
+                  disabled={currentQuestion === 0}
+                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg disabled:opacity-50"
+                >
+                  {t('common.previous') || 'Previous'}
+                </button>
+
+                {currentQuestion < questions.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={answers[questions[currentQuestion].id] === undefined}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50"
+                  >
+                    {t('common.next') || 'Next'}
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={loading || Object.keys(answers).length < questions.length}
+                    className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? t('common.loading') : t('selfAssessment.submit')}
+                  </button>
+                )}
+              </div>
             </form>
           ) : (
             <div className="text-center space-y-6">
@@ -252,6 +298,7 @@ export const SelfAssessment = () => {
                 onClick={() => {
                   setResult(null);
                   setAnswers({});
+                  setCurrentQuestion(0);
                 }}
                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
               >

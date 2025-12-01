@@ -1,12 +1,12 @@
 import { useState, FormEvent, ChangeEvent } from 'react';
-import { Scan, Upload, CheckCircle } from 'lucide-react';
-import { Navbar } from '../components/Navbar';
+import { Link } from 'react-router-dom';
+import { Scan, Upload, CheckCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useLanguage } from '../components/LanguageToggle';
+import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 
 export const XRayScan = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { t } = useLanguage();
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
@@ -69,7 +69,7 @@ export const XRayScan = () => {
       formData.append('confidence', aiResult.confidence);
       formData.append('model', aiResult.model);
 
-      await api.uploadXRay(formData, user!.token);
+      await api.uploadXRay(formData, token!);
       setResult(aiResult);
     } catch (error) {
       console.error('Failed to analyze X-Ray:', error);
@@ -84,10 +84,12 @@ export const XRayScan = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
       <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/4021775/pexels-photo-4021775.jpeg?auto=compress&cs=tinysrgb&w=1920')] bg-cover bg-center opacity-5"></div>
 
-      <Navbar />
-
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
+          <Link to="/home" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 transition-colors">
+            <ArrowLeft className="mr-2" size={20} />
+            Back to Home
+          </Link>
           <div className="flex items-center gap-4 mb-8">
             <div className="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-xl">
               <Scan size={32} className="text-white" />
@@ -160,7 +162,6 @@ export const XRayScan = () => {
                     <option value="">Select</option>
                     <option value="male">{t('xrayScan.male')}</option>
                     <option value="female">{t('xrayScan.female')}</option>
-                    <option value="other">{t('xrayScan.other')}</option>
                   </select>
                 </div>
 
@@ -219,9 +220,6 @@ export const XRayScan = () => {
                 </p>
                 <p className="text-lg text-gray-700">
                   <span className="font-semibold">{t('xrayScan.confidence')}:</span> {result.confidence}%
-                </p>
-                <p className="text-lg text-gray-700">
-                  <span className="font-semibold">{t('xrayScan.model')}:</span> {result.model}
                 </p>
               </div>
               {preview && (

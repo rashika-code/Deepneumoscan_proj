@@ -1,17 +1,11 @@
-import mongoose from "mongoose";
+import { ensureDataDir } from '../utils/jsonDb';
 
 const connectDB = async () => {
   try {
-    const uri = process.env.MONGO_URI;
-
-    if (!uri) {
-      throw new Error("MONGO_URI is missing in .env file!");
-    }
-
-    await mongoose.connect(uri);
-    console.log("✅ MongoDB connected");
+    ensureDataDir();
+    console.log("✅ Local JSON Database initialized");
   } catch (err) {
-    console.error("MongoDB connection error:", err);
+    console.error("Database initialization error:", err);
   }
 };
 
