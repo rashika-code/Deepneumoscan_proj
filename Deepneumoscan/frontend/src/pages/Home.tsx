@@ -63,9 +63,8 @@ export const Home = () => {
         </div>
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            {t('home.welcome')}, {user?.username}!
+             {t('home.welcome')} to {t('home.title')}
           </h1>
-          <p className="text-2xl text-blue-600 font-semibold mb-2">{t('home.title')}</p>
           <p className="text-lg text-gray-600">{t('home.description')}</p>
         </div>
 
@@ -104,4 +103,5 @@ export const Home = () => {
     </div>
   );
 };
+
 
