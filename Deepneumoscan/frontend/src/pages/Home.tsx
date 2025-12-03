@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ClipboardList, Scan, Activity, MapPin, History, ArrowRight, LogOut } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../context/LanguageContext';
+import { LanguageToggle } from '../components/LanguageToggle';
 
 export const Home = () => {
   const { user, logout } = useAuth();
@@ -50,7 +51,8 @@ export const Home = () => {
       <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/4021775/pexels-photo-4021775.jpeg?auto=compress&cs=tinysrgb&w=1920')] bg-cover bg-center opacity-5"></div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="absolute top-4 right-4">
+        <div className="absolute top-4 right-4 flex items-center gap-4">
+          <LanguageToggle />
           <button
             onClick={logout}
             className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors shadow-sm font-medium"
@@ -76,7 +78,7 @@ export const Home = () => {
                 to={feature.path}
                 className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 hover:-translate-y-2"
               >
-                <div className={`inline-flex p-4 rounded-xl bg-gradient-to-r ${feature.color} mb-4 group-hover:scale-110 transition-transform`}>
+                <div className={inline-flex p-4 rounded-xl bg-gradient-to-r ${feature.color} mb-4 group-hover:scale-110 transition-transform}>
                   <Icon size={32} className="text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
