@@ -74,20 +74,20 @@ export const Home = () => {
             const Icon = feature.icon;
             return (
               <Link
-                key={feature.path}
-                to={feature.path}
-                className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 hover:-translate-y-2"
-              >
-                <div className={inline-flex p-4 rounded-xl bg-gradient-to-r ${feature.color} mb-4 group-hover:scale-110 transition-transform}>
-                  <Icon size={32} className="text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600 mb-4 leading-relaxed">{feature.description}</p>
-                <div className="flex items-center text-blue-600 font-semibold group-hover:gap-2 transition-all">
-                  <span>Get Started</span>
-                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                </div>
-              </Link>
+  key={feature.path}
+  to={feature.path}
+  className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 hover:-translate-y-2"
+>
+  <div className={`inline-flex p-4 rounded-xl bg-gradient-to-r ${feature.color} mb-4 group-hover:scale-110 transition-transform`}>
+    <Icon size={32} className="text-white" />
+  </div>
+  <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
+  <p className="text-gray-600 mb-4 leading-relaxed">{feature.description}</p>
+  <div className="flex items-center text-blue-600 font-semibold group-hover:gap-2 transition-all">
+    <span>Get Started</span>
+    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+  </div>
+</Link>
             );
           })}
         </div>
@@ -104,3 +104,4 @@ export const Home = () => {
     </div>
   );
 };
+
